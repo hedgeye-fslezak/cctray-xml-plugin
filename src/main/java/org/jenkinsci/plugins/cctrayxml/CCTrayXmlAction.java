@@ -23,16 +23,14 @@
  */
 package org.jenkinsci.plugins.cctrayxml;
 
-import hudson.model.Action;
-import hudson.model.Item;
-import hudson.model.Job;
-import hudson.model.TopLevelItem;
-import hudson.model.View;
+import hudson.model.*;
+import jenkins.scm.api.metadata.PrimaryInstanceMetadataAction;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
 
-import java.util.Collection;
+import java.util.*;
 
 @Restricted(NoExternalUse.class)
 public class CCTrayXmlAction implements Action {
@@ -97,7 +95,16 @@ public class CCTrayXmlAction implements Action {
         if (Stapler.getCurrentRequest().getParameter("recursive") != null) {
             return view.getOwner().getItemGroup().getAllItems(TopLevelItem.class);
         } else {
-            return view.getItems();
+            List<TopLevelItem> items = new ArrayList<>();
+
+            items.addAll(view.getItems()); // get all top-level items in the default view
+
+            // and find all multi-branch default items (HE addition)
+            items.addAll(view.getOwner().getItemGroup().getAllItems(WorkflowJob.class,
+                    (WorkflowJob p) -> p.getAction(PrimaryInstanceMetadataAction.class) != null)
+            );
+
+            return items;
         }
     }
 }
