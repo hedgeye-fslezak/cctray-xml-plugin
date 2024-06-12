@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.79</version>
+        <version>4.83</version>
         <relativePath/>
     </parent>
 
@@ -14,7 +14,7 @@
     <packaging>hpi</packaging>
 
     <properties>
-        <jenkins.version>2.440</jenkins.version>
+        <jenkins.version>2.454</jenkins.version>
         <java.level>11</java.level>
         <changelist>999999-SNAPSHOT</changelist>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
@@ -51,16 +51,30 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.452.x</artifactId>
+                <scope>import</scope>
+                <version>3120.v4d898e1e9fc4</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>branch-api</artifactId>
-            <version>[2.1150,3.0)</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-job</artifactId>
-            <version>[1399,)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-multibranch</artifactId>
         </dependency>
     </dependencies>
 </project>

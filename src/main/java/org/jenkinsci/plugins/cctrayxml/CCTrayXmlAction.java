@@ -24,8 +24,10 @@
 package org.jenkinsci.plugins.cctrayxml;
 
 import hudson.model.*;
+import jenkins.model.Jenkins;
 import jenkins.scm.api.metadata.PrimaryInstanceMetadataAction;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.Stapler;
@@ -93,16 +95,32 @@ public class CCTrayXmlAction implements Action {
     @Restricted(NoExternalUse.class) // Jelly
     public Collection<TopLevelItem> getCCItems() {
         if (Stapler.getCurrentRequest().getParameter("recursive") != null) {
-            return view.getOwner().getItemGroup().getAllItems(TopLevelItem.class);
+            Collection<TopLevelItem> allItems = view.getOwner().getItemGroup().getAllItems(TopLevelItem.class);
+
+            if (Stapler.getCurrentRequest().getParameter("everything") != null) {
+                return allItems;
+            }
+
+            // filter out jobs that aren't the default branch of a multibranch pipeline
+            allItems.removeIf((TopLevelItem i) -> i instanceof WorkflowJob
+                    && ((WorkflowJob) i).getParent() instanceof WorkflowMultiBranchProject
+                    && ((WorkflowJob) i).getAction(PrimaryInstanceMetadataAction.class) == null);
+
+            return allItems;
         } else {
-            List<TopLevelItem> items = new ArrayList<>();
+            var viewBaseItems = view.getItems();
 
-            items.addAll(view.getItems()); // get all top-level items in the default view
+            List<TopLevelItem> items = new ArrayList<>(viewBaseItems);
 
-            // and find all multi-branch default items (HE addition)
-            items.addAll(view.getOwner().getItemGroup().getAllItems(WorkflowJob.class,
-                    (WorkflowJob p) -> p.getAction(PrimaryInstanceMetadataAction.class) != null)
-            );
+            // lightly recurse to capture extras
+            for (TopLevelItem item : viewBaseItems) {
+                if (!(item instanceof WorkflowMultiBranchProject)) continue;
+
+                // Capture default branches from multibranch jobs
+                items.addAll(((WorkflowMultiBranchProject) item).getAllItems(WorkflowJob.class,
+                        (WorkflowJob j) -> j.getAction(PrimaryInstanceMetadataAction.class) != null
+                ));
+            }
 
             return items;
         }
